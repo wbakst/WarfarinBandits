@@ -30,8 +30,6 @@ features = [
   'Amiodarone'
 ]
 
-# impute data values
-
 num_correct, num_patients = 0, 0
 for index, patient in data.iterrows():
   try:
