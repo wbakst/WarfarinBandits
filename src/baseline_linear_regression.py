@@ -30,52 +30,25 @@ features = [
   'Amiodarone'
 ]
 
-def get_amiodorone_status(row):
-  medications = row['Medications']
-  if not isinstance(medications, str) and np.isnan(medications):
-    return 0
-  if 'amiodarone' in medications and 'not amiodarone' not in medications:
-    return 1
-  return 0
-
-def get_enzyme_status(row):
-  num_inducers = row['Rifampin or Rifampicin'] + row['Carbamazepine (Tegretol)'] + row['Phenytoin (Dilantin)']
-  return 1 if num_inducers > 0 else 0
-
-
-
 # impute data values
 
-num_correct = 0
-count = 0
-for index, row in data.iterrows():
+num_correct, num_patients = 0, 0
+for index, patient in data.iterrows():
   try:
-    age = int(row['Age'][0])
-    height = row['Height (cm)']
-    weight = row['Weight (kg)']
-    race = row['Race']
-
-    asian = 1 if race is 'Asian' else 0
-    black = 1 if race is 'Black' else 0
-    missing = 1 if race is 'Unknown' else 0
-
-    true_dosage = float(row['Therapeutic Dose of Warfarin'])
-    count += 1
+    f = get_baseline_linear_features(patient)
+    num_patients += 1
   except:
     continue # skip rows with missing entries
 
-  enzyme = get_enzyme_status(row)
-  amiodorone_status = get_amiodorone_status(row)
-  f = [1, age, height, weight, asian, black, missing, enzyme, amiodorone_status]
   pred = 0
   for index, item in enumerate(f):
     pred += item * feature_weights[features[index]]
   pred = pred * pred
 
-  if correct_predicted_dosage(true_dosage, pred):
+  if correct_predicted_dosage(get_true_dosage(patient), pred):
     num_correct += 1
 
 print(len(data))
-print(count)
-print(num_correct / float(count))
+print(num_patients)
+print(num_correct / float(num_patients))
 
