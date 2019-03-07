@@ -6,6 +6,8 @@ LOW = 0
 MEDIUM = 1
 HIGH = 2
 
+NUM_LIN_UCB_FEATURES = 9
+
 # Returns which dosage type (low, medium, high)
 def get_dosage_bucket(dosage):
 	if dosage < 21:
@@ -19,11 +21,23 @@ def get_dosage_bucket(dosage):
 def correct_predicted_dosage(true_dosage, predicted_dosage):
 	return get_dosage_bucket(true_dosage) == get_dosage_bucket(predicted_dosage)
 
+# Extract true action (LOW, MEDIUM, HIGH) for a given patient
+def get_true_action(patient):
+	return get_dosage_bucket(float(patient['Therapeutic Dose of Warfarin']))
+
 # Extract true dosage for a given patient
 def get_true_dosage(patient):
 	return float(patient['Therapeutic Dose of Warfarin'])
 
 # Extract (baseline linear regression) feature vector for a given patient
+'''
+for index, patient in data.iterrows():
+  try:
+    f = get_baseline_linear_features(patient)
+    num_patients += 1
+  except:
+    continue # skip rows with missing entries
+'''
 def get_baseline_linear_features(patient):
 	# Extract age (in decades)
 	age = int(patient['Age'][0])
@@ -43,7 +57,7 @@ def get_baseline_linear_features(patient):
 
 # Extract (linUCB) feature vector for a given patient
 def get_linUCB_features(patient):
-	return None
+	return get_baseline_linear_features(patient)
 
 ########################################
 ###### INTERNAL HELPER FUNCTIONS #######
