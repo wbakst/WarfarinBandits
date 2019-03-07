@@ -23,7 +23,7 @@ def correct_predicted_dosage(true_dosage, predicted_dosage):
 def get_true_dosage(patient):
 	return float(patient['Therapeutic Dose of Warfarin'])
 
-# Extract feature vector for a given patient
+# Extract (baseline linear regression) feature vector for a given patient
 def get_baseline_linear_features(patient):
 	# Extract age (in decades)
 	age = int(patient['Age'][0])
@@ -40,6 +40,10 @@ def get_baseline_linear_features(patient):
 	amiodorone_status = get_amiodorone_status(patient)
 	# Return feature vector of extract patient information
 	return [1, age, height, weight, asian, black, missing, enzyme, amiodorone_status]
+
+# Extract (linUCB) feature vector for a given patient
+def get_linUCB_features(patient):
+	return None
 
 ########################################
 ###### INTERNAL HELPER FUNCTIONS #######
