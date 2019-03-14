@@ -2,16 +2,18 @@ import pandas as pd
 from matplotlib import pyplot as plt
 import numpy as np
 from utils import *
-from sklearn.utils import shuffle
 
+alpha = 7
+NUM_RUNS = 5
 
-data = pd.read_csv('../data/warfarin.csv')
-data = data[data['Therapeutic Dose of Warfarin'].notnull()]
+original_data = pd.read_csv('data/warfarin.csv')
+original_data = original_data[original_data['Therapeutic Dose of Warfarin'].notnull()]
 
-data = data.sample(frac=1).reset_index(drop=True)
-
-	# Train model parameters A and b
+# Train model parameters A and b
 def run_UCB(alpha, K, d):
+	# Randomize data for this run
+	data = original_data.sample(frac=1).reset_index(drop=True)
+	# Initialization
 	num_correct = 0
 	num_patients = 0
 	avg_incorrect = []
@@ -30,7 +32,6 @@ def run_UCB(alpha, K, d):
 				num_patients += 1
 		except:
 				continue
-
 		# Iterate over each arm
 		p_t = np.zeros(K)
 		for a in range(K):
@@ -42,7 +43,6 @@ def run_UCB(alpha, K, d):
 		true_action = get_true_action(patient)
 		r_t = 1 if true_action == a_t else 0
 		num_correct += 1 if true_action == a_t else 0
-		print ((num_patients, num_correct))
 		avg_incorrect.append(((num_patients+1-num_correct) / (num_patients+1)))
 
 		# Update A <-- A + x_t[a_t].dot(X_t[a_t].T)
@@ -50,15 +50,11 @@ def run_UCB(alpha, K, d):
 		# Update b <-- b + x_t[a] * r_t
 		b[a_t] += X_t*r_t
 	# return regret and error
-	print('')
-	print('')
-	print((num_correct, float(num_patients)))
-	print(num_correct / float(num_patients))
-	plt.plot(range(len(avg_incorrect)), avg_incorrect)
-	plt.show()
-	plt.close()
-	return regret, error
+	print(num_correct / num_patients)
+	return avg_incorrect, regret, error
 
-alpha = 7
-
-regret, error = run_UCB(alpha, K=3, d=NUM_LIN_UCB_FEATURES)
+for i in range(NUM_RUNS):
+	avg_incorrect, regret, error = run_UCB(alpha, K=3, d=NUM_LIN_UCB_FEATURES)
+	plt.plot(range(len(avg_incorrect)), avg_incorrect, label='run_{}'.format(i+1))
+# plt.legend()
+plt.show()

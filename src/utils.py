@@ -6,7 +6,7 @@ LOW = 0
 MEDIUM = 1
 HIGH = 2
 
-NUM_LIN_UCB_FEATURES = 2
+NUM_LIN_UCB_FEATURES = 25
 
 data_cols = ['PharmGKB Subject ID', 'Gender', 'Race', 'Ethnicity', 'Age', 'Height (cm)', 'Weight (kg)',
 'Indication for Warfarin Treatment', 'Comorbidities', 'Diabetes', 'Congestive Heart Failure and/or Cardiomyopathy',
@@ -127,17 +127,18 @@ def get_linUCB_features(patient):
 	height = features[2]
 	weight = features[3]
 
-	del features[1:7]
-	del features[1]
+	# del features[1:7]
+	del features[1:4]
 
-	# features += get_age_features(age)
-	# features += get_height_features(height)
-	# features += get_weight_features(weight)
+	features += get_age_features(age)
+	features += get_height_features(height)
+	features += get_weight_features(weight)
 	# features += get_CYP2C9_features(patient['Cyp2C9 genotypes'])
-	# # print (patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'])
-	# #print(patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'])
+	# print (patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'])
+	# print(patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'])
 	# features += get_VKORC1_features(patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'])
 
+	# print(len(features))
 	return features
 
 ########################################
