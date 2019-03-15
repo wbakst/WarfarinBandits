@@ -8,12 +8,22 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--algo',   type=str,    default='thompson',    help='Algorithm to run on Wargarin Dataset')
+parser.add_argument('--algo',         type=str,  default='thompson',    help='Algorithm to run on Wargarin Dataset')
+parser.add_argument('--K',            type=int,  default=3,             help='Number of arms')
+parser.add_argument('--d',            type=int,  default=NUM_FEATURES,  help='Number of features for each patient')
+
+# UCB args
+parser.add_argument('--alpha',        type=int,  default=7,             help='Alpha for LinearUCB')
+
+# Thompson args
+parser.add_argument('--epsilon',        type=float,  default=.5,        help='Epsilon for Thompson')
+parser.add_argument('--delta',          type=float,  default=.5,        help='Delta for Thompson')
+parser.add_argument('--R',              type=float,  default=1.,        help='R for Thompson')
+
+# MWU args
 parser.add_argument('--N',      type=int,    default=20,            help='How many experts to use for MWU')
 parser.add_argument('--eta',    type=float,  default=0.95,           help='MWU exploration parameter')
-parser.add_argument('--K',      type=int,    default=3,             help='Number of arms')
-parser.add_argument('--d',      type=int,    default=NUM_FEATURES,  help='Number of features for each patient')
-parser.add_argument('--alpha',  type=int,    default=7,             help='Alpha for LinearUCB')
+
 args = parser.parse_args()
 
 # Valid algorithms we have implements
@@ -27,7 +37,7 @@ def run():
 	if args.algo == 'mwu':
 		module = MWU(args.K, args.d, args.N, args.eta)
 	elif args.algo == 'thompson':
-		module = ThompsonSampler(args.K, args.d)
+		module = ThompsonSampler(args.K, args.d, args.epsilon, args.delta, args.R)
 	elif args.algo == 'linear_ucb':
 		module = LinearUCB(args.K, args.d, args.alpha)
 	else:
