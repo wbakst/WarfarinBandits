@@ -89,7 +89,7 @@ def run():
 	return num_correct, num_patients, avg_incorrect
 
 def main():
-	# If not MWU, then we can simply determine the 
+	# If not MWU, then we can simply determine the
 	# model and run it with the same skeleton
 	num_correct, num_patients, avg_incorrect = 0, 0, 0
 	if args.algo in BASELINES:
