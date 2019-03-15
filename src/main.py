@@ -33,6 +33,7 @@ ALGORITHMS = ['mwu', 'thompson', 'lin_ucb', 'lasso']
 # Read in data
 data = pd.read_csv('data/warfarin.csv')
 data = data[data['Therapeutic Dose of Warfarin'].notnull()]
+data = data.sample(frac=1).reset_index(drop=True)
 
 # Runs the baselines
 def baseline():
@@ -60,6 +61,8 @@ def run():
 	num_correct = 0
 	num_patients = 0
 	avg_incorrect = []
+	preds = [0, 0, 0]
+	true = [0, 0, 0]
 
 	# Iterate over patients
 	for t, patient in data.iterrows():
@@ -67,16 +70,19 @@ def run():
 		try:
 			X_t = np.array(get_linUCB_features(patient))
 			num_patients += 1
-		except:
+		except Exception as e:
+			print(e)
 			continue
 
 		# Pull an arm
 		a_t = module.pull(X_t)
+		preds[a_t] += 1
 
 		# Observe reward r_t in {-1,0}
 		true_action = get_true_action(patient)
 		r_t = np.zeros(args.K)
 		r_t[true_action] = 1
+		true[true_action] += 1
 
 		# Update the model
 		module.update(X_t, a_t, r_t)
@@ -86,7 +92,7 @@ def run():
 		avg_incorrect.append(((t+1-num_correct) / (t+1)))
 
 	# Return statisics variables
-	return num_correct, num_patients, avg_incorrect
+	return num_correct, num_patients, avg_incorrect, preds, true
 
 def main():
 	# If not MWU, then we can simply determine the
@@ -95,16 +101,18 @@ def main():
 	if args.algo in BASELINES:
 		num_correct, num_patients = baseline()
 	elif args.algo in ALGORITHMS:
-		num_correct, num_patients, avg_incorrect = run()
+		num_correct, num_patients, avg_incorrect, preds, true = run()
 		# Determine statistics and make plots
 		plt.plot(range(len(avg_incorrect)), avg_incorrect)
-		plt.show()
-		plt.close()
+		# plt.show()
+		# plt.close()
 	else:
 		raise NotImplementedError
 
 	# Print out accuracy of algorithm
 	print('Accuracy: {}'.format(num_correct / float(num_patients)))
+	print('Predictions', preds)
+	print('True', true)
 
 if __name__ == '__main__':
 	main()
