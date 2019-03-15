@@ -13,3 +13,4 @@ def run_LASSO(q, h, lam_1, lam_2_0, d):
 	T, S = [set(), set(), set()], [set(), set(), set()]
 	# Initialize Beta_T, Beta_S as d dimensional vectors
 	Beta_T, Beta_S = [np.zeros(d), np.zeros(d), np.zeros(d)], [np.zeros(d), np.zeros(d), np.zeros(d)]
+	# 

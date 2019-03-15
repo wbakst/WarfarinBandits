@@ -7,6 +7,7 @@ MEDIUM = 1
 HIGH = 2
 
 NUM_LIN_UCB_FEATURES = 25
+NUM_FEATURES = 25
 
 data_cols = ['PharmGKB Subject ID', 'Gender', 'Race', 'Ethnicity', 'Age', 'Height (cm)', 'Weight (kg)',
 'Indication for Warfarin Treatment', 'Comorbidities', 'Diabetes', 'Congestive Heart Failure and/or Cardiomyopathy',
