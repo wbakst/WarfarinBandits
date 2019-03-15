@@ -3,6 +3,34 @@ import numpy as np
 from utils import *
 
 ##################################################
+################# LASSO BANDIT ###################
+##################################################
+
+class LASSO:
+	def __init__(self, K, d, q, h, l1, l2):
+		# Maintain list of actions and rewards for future reference
+		self.actions, self.rewards = [], []
+		# Parameters
+		self.K = K
+		self.d = d
+		self.q = q
+		self.h = h
+		self.l1 = l1
+		self.l2 = l2
+		# Variables
+		self.T = [set() for i in range(self.K)]
+		self.S = [set() for i in range(self.K)]
+		# Initialize Beta_T, Beta_S as d dimensional vectors
+		self.Beta_T = [np.zeros(d) for i in range(K)]
+		self.Beta_S = [np.zeros(d) for i in range(K)]
+
+	def pull(self, X_t):
+		pass
+
+	def update(self, X_t, a_t, r_t):
+		pass
+
+##################################################
 ################### LINEAR UCB ###################
 ##################################################
 
