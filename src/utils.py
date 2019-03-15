@@ -224,16 +224,18 @@ def single_action_baseline(data):
 
 def linear_regression_baseline(data):
 	num_correct, num_patients = 0, 0
+	num_discarded = 0
 	for index, patient in data.iterrows():
-		try:
-			f = get_baseline_linear_features(patient)
-			num_patients += 1
-		except:
-			continue # skip rows with missing entries
+		f = get_baseline_linear_features(patient)
+		if True in np.isnan(f):
+			num_discarded += 1
+			continue # Skip rows with missing data
+		num_patients += 1
 		pred = 0
 		for index, item in enumerate(f):
 			pred += item * baseline_feature_weights[baseline_features[index]]
 		pred = pred * pred
 		if correct_predicted_dosage(get_true_dosage(patient), pred):
 			num_correct += 1
+	print('Num discarded', num_discarded)
 	return num_correct, float(num_patients)
