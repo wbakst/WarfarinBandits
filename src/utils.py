@@ -3,6 +3,7 @@
 ########################################
 import numpy as np
 import pandas as pd
+from sklearn import preprocessing
 
 LOW = 0
 MEDIUM = 1
@@ -192,7 +193,7 @@ def get_linUCB_features(patient):
 	features += get_weight_features(weight)
 	features += get_CYP2C9_features(patient['Cyp2C9 genotypes'])
 	features += get_VKORC1_features(patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'])
-	return features
+	return np.reshape(preprocessing.normalize(np.reshape(features, (1, -1))), (NUM_LIN_UCB_FEATURES,))
 
 ########################################
 ###### INTERNAL HELPER FUNCTIONS #######
@@ -237,5 +238,5 @@ def linear_regression_baseline(data):
 		pred = pred * pred
 		if correct_predicted_dosage(get_true_dosage(patient), pred):
 			num_correct += 1
-	print('Num discarded', num_discarded)
+	# print('Num discarded', num_discarded)
 	return num_correct, float(num_patients)
