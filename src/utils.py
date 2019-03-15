@@ -29,6 +29,32 @@ data_cols = ['PharmGKB Subject ID', 'Gender', 'Race', 'Ethnicity', 'Age', 'Heigh
 'VKORC1 genotype: -4451 C>A (861); Chr16:31018002; rs17880887; A/C', 'VKORC1 QC genotype: -4451 C>A (861); Chr16:31018002; rs17880887; A/C',
 'CYP2C9 consensus', 'VKORC1 -1639 consensus', 'VKORC1 497 consensus', 'VKORC1 1173 consensus', 'VKORC1 1542 consensus', 'VKORC1 3730 consensus',
 'VKORC1 2255 consensus', 'VKORC1 -4451 consensus', 'Unnamed: 63', 'Unnamed: 64', 'Unnamed: 65']
+
+baseline_feature_weights = {
+  'bias': 4.0375,
+  'Age:': -0.2546,
+  'Height (cm)': 0.0118,
+  'Weight (kg)': 0.0134,
+  'Asian_Race': -0.6752,
+  'Black_Race': 0.4060,
+  'Missing_Race': 0.0443,
+  'Enzyme': 1.2799,
+  'Amiodarone': -0.5695
+}
+
+baseline_features = [
+  'bias',
+  'Age:',
+  'Height (cm)',
+  'Weight (kg)',
+  'Asian_Race',
+  'Black_Race',
+  'Missing_Race',
+  'Enzyme',
+  'Amiodarone'
+]
+
+
  # Returns which dosage type (low, medium, high)
 def get_dosage_bucket(dosage):
 	if dosage < 21:
@@ -157,3 +183,28 @@ def get_amiodorone_status(patient):
 def get_enzyme_status(patient):
 	num_inducers = patient['Rifampin or Rifampicin'] + patient['Carbamazepine (Tegretol)'] + patient['Phenytoin (Dilantin)']
 	return 1 if num_inducers > 0 else 0
+
+########################################
+######## BASELINE FUNCTIONALITY ########
+########################################
+
+def single_action_baseline(data):
+	true_dosages = data.loc[:,'Therapeutic Dose of Warfarin'].values.tolist()
+	num_correct = sum([1. for i in true_dosages if i >= 21 and i <= 49])  # 3-5 mg/day
+	return num_correct, len(true_dosages)
+
+def linear_regression_baseline(data):
+	num_correct, num_patients = 0, 0
+	for index, patient in data.iterrows():
+		try:
+			f = get_baseline_linear_features(patient)
+			num_patients += 1
+		except:
+			continue # skip rows with missing entries
+		pred = 0
+		for index, item in enumerate(f):
+			pred += item * baseline_feature_weights[baseline_features[index]]
+		pred = pred * pred
+		if correct_predicted_dosage(get_true_dosage(patient), pred):
+			num_correct += 1
+	return num_correct, float(num_patients)

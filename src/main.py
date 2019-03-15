@@ -27,12 +27,23 @@ parser.add_argument('--eta',    type=float,  default=0.95,           help='MWU e
 args = parser.parse_args()
 
 # Valid algorithms we have implements
+BASELINES = ['single', 'lin_reg']
 ALGORITHMS = ['mwu', 'thompson', 'linear_ucb']
 
 # Read in data
 data = pd.read_csv('data/warfarin.csv')
 data = data[data['Therapeutic Dose of Warfarin'].notnull()]
 
+# Runs the baselines
+def baseline():
+	if args.algo == 'single':
+		return single_action_baseline(data)
+	elif args.algo == 'lin_reg':
+		return linear_regression_baseline(data)
+	else:
+		raise NotImplementedError
+
+# Runs a module from modules.py
 def run():
 	if args.algo == 'mwu':
 		module = MWU(args.K, args.d, args.N, args.eta)
@@ -79,16 +90,19 @@ def main():
 	# If not MWU, then we can simply determine the 
 	# model and run it with the same skeleton
 	num_correct, num_patients, avg_incorrect = 0, 0, 0
-	if not args.algo in ALGORITHMS:
-		raise NotImplementedError
-	else:
+	if args.algo in BASELINES:
+		num_correct, num_patients = baseline()
+	elif args.algo in ALGORITHMS:
 		num_correct, num_patients, avg_incorrect = run()
+		# Determine statistics and make plots
+		plt.plot(range(len(avg_incorrect)), avg_incorrect)
+		plt.show()
+		plt.close()
+	else:
+		raise NotImplementedError
 
-	# Determine statistics and make plots
+	# Print out accuracy of algorithm
 	print('Accuracy: {}'.format(num_correct / float(num_patients)))
-	plt.plot(range(len(avg_incorrect)), avg_incorrect)
-	plt.show()
-	plt.close()
 
 if __name__ == '__main__':
 	main()
