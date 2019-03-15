@@ -36,7 +36,7 @@ class LinearUCB:
 		# Update A <-- A + x_t[a_t].dot(X_t[a_t].T)
 		self.A[a_t] += X_t.dot(X_t.T)
 		# Update b <-- b + x_t[a] * r_t
-		self.b[a_t] += X_t*r_t
+		self.b[a_t] += X_t*r_t[a_t]
 
 ##################################################
 ############### THOMPSON SAMPLING ################
@@ -73,21 +73,49 @@ class ThompsonSampler:
 
 	def update(self, X_t, a_t, r_t):
 		# Update rewards
-		self.rewards.append(r_t)
+		self.rewards.append(r_t[a_t])
 		# Update parameters based on choice and reward
 		self.B[a_t] = self.B[a_t] + X_t.dot(X_t.T)
-		self.f[a_t] = self.f[a_t] + X_t * r_t
+		self.f[a_t] = self.f[a_t] + X_t * r_t[a_t]
 		self.mu_hat[a_t] = np.linalg.inv(self.B[a_t]).dot(self.f[a_t])
 
 ##################################################
 ########## MULTIPLICATIVE WEIGHT UPDATE ##########
 ##################################################
 class MWU:
-	def __init__(self):
-		pass
+	def __init__(self, K, d, N, eta):
+		# Maintain list of actions and rewards for future reference
+		self.actions, self.rewards = [], []
+		# Parameters
+		self.N = N
+		self.eta = eta
+		self.K = K
+		self.d = d
+		# Experts
+		self.experts = [ThompsonSampler(self.K, self.d) for i in range(self.N)]
+		# Variables
+		self.weights = [1.] * self.N
+		self.previous_expert_actions = [0] * len(self.experts)
 
 	def pull(self, X_t):
-		pass
+		# Pull an arm for each expert
+		weighted_actions = [0.] * self.K
+		for i in range(self.N):
+			a = self.experts[i].pull(X_t)
+			weighted_actions[a] += self.weights[i] / np.sum(self.weights)
+			self.previous_expert_actions[i] = a
+		# Determine majority vote action
+		a_t = np.argmax(weighted_actions)
+		# Update actions list and return chosen arm
+		self.actions.append(a_t)
+		return a_t
 
 	def update(self, X_t, a_t, r_t):
-		pass
+		# Updae rewards
+		self.rewards.append(r_t[a_t])
+		# Update each individual expert
+		for i in range(self.N):
+			self.experts[i].update(X_t, a_t, r_t)
+		# Update weights based on correct vs. incorrect guesses
+		for i, weight in enumerate(self.weights.copy()):
+			self.weights[i] *= (self.eta ** -r_t[self.previous_expert_actions[i]])
