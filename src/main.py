@@ -58,6 +58,7 @@ def run():
 	elif args.algo == 'thompson':
 		module = ThompsonSampler(args.K, args.d, args.v)
 	elif args.algo == 'lin_ucb':
+		args.d = NUM_LIN_UCB_FEATURES
 		module = LinearUCB(args.K, args.d, len(data))
 	elif args.algo == 'lasso':
 		module = LASSO(args.K, len(data), args.d, q=args.q, h=args.h, l1=args.l1, l2=args.l2)
@@ -78,7 +79,7 @@ def run():
 			# skip tells us the data points that were skipped by linear regression
 			# if we want to check accuracy on same data set as lin reg,
 			# uncomment the line below
-			X_t, skip = np.array(get_linUCB_features(patient))
+			X_t, skip = np.array(get_features(patient, args.algo == 'lin_ucb'))
 			# if skip: continue
 			num_patients += 1
 		except Exception as e:

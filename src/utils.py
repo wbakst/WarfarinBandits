@@ -9,7 +9,7 @@ LOW = 0
 MEDIUM = 1
 HIGH = 2
 
-NUM_LIN_UCB_FEATURES = 62
+NUM_LIN_UCB_FEATURES = 65
 NUM_FEATURES = 62
 
 data_cols = ['PharmGKB Subject ID', 'Gender', 'Race', 'Ethnicity', 'Age', 'Height (cm)', 'Weight (kg)',
@@ -271,9 +271,8 @@ def get_rosuvastatin(patient):
 def get_cerivastatin(patient):
 	return get_binary_feature(patient['Cerivastatin (Baycol)'])
 
-# Extract (linUCB) feature vector for a given patient
-def get_linUCB_features(patient):
-
+# Extract feature vector for a given patient
+def get_features(patient, ucb=False):
 	features = get_baseline_linear_features(patient)
 	skip = False
 
@@ -303,6 +302,8 @@ def get_linUCB_features(patient):
 	# features += get_pravastatin(patient)
 	#features += get_rosuvastatin(patient)
 	# features += get_cerivastatin(patient)
+	if ucb:
+		features = [0, 0, 0] + features
 	return np.reshape(preprocessing.normalize(np.reshape(features, (1, -1))), (NUM_LIN_UCB_FEATURES,)), skip
 
 ########################################

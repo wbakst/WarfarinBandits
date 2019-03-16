@@ -112,8 +112,12 @@ class LinearUCB:
 		# Iterate over each arm
 		p_t = np.zeros(self.K)
 		for a in range(self.K):
+			# Update particular arm feature
+			X_t[a] = 1
 			# compute probability distribution as theta_t.T.dot(X_t[a]) + alpha * sqrt(X_t[a].T.dot(Inverse(A)).dot(X_t[a]))
 			p_t[a] = theta[a].T.dot(X_t) + self.alpha*np.sqrt(X_t.T.dot(np.linalg.inv(self.A[a])).dot(X_t)) # UCB (upper confidence bound)
+			# Reset feature vector for next arm
+			X_t[a] = 0
 		# Choose action a_t as argmax_a(p_t[a])
 		a_t = np.argmax(p_t)
 		# Update actions list and return chosen arm
