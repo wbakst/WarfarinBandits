@@ -79,7 +79,7 @@ def run():
 			# skip tells us the data points that were skipped by linear regression
 			# if we want to check accuracy on same data set as lin reg,
 			# uncomment the line below
-			X_t, skip = np.array(get_features(patient, args.algo == 'lin_ucb'))
+			X_t, skip = np.array(get_features(patient, (args.algo == 'lin_ucb')))
 			# if skip: continue
 			num_patients += 1
 		except Exception as e:

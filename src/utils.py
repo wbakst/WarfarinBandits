@@ -304,7 +304,9 @@ def get_features(patient, ucb=False):
 	# features += get_cerivastatin(patient)
 	if ucb:
 		features = [0, 0, 0] + features
-	return np.reshape(preprocessing.normalize(np.reshape(features, (1, -1))), (NUM_LIN_UCB_FEATURES,)), skip
+		return np.reshape(preprocessing.normalize(np.reshape(features, (1, -1))), (NUM_LIN_UCB_FEATURES,)), skip
+	else:
+		return np.reshape(preprocessing.normalize(np.reshape(features, (1, -1))), (NUM_FEATURES,)), skip
 
 ########################################
 ###### INTERNAL HELPER FUNCTIONS #######
