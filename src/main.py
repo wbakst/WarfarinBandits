@@ -122,8 +122,8 @@ def main():
 
 	# Print out accuracy of algorithm
 	print('Accuracy: {}'.format(num_correct / float(num_patients)))
-	print('Predictions', preds)
-	print('True', true)
+	# print('Predictions', preds)
+	# print('True', true)
 
 if __name__ == '__main__':
 	main()
