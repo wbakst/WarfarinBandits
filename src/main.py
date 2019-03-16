@@ -8,20 +8,28 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--algo',     type=str,    default='lin_ucb',    help='Algorithm to run on Wargarin Dataset')
+parser.add_argument('--algo',     type=str,    default='lin_ucb',     help='Algorithm to run on Wargarin Dataset')
 parser.add_argument('--K',        type=int,    default=3,             help='Number of arms')
 parser.add_argument('--d',        type=int,    default=NUM_FEATURES,  help='Number of features for each patient')
 
 # UCB args
 parser.add_argument('--alpha',    type=int,    default=7,             help='Alpha for LinearUCB')
 
+# LASSO args
+parser.add_argument('--q',        type=int,    default=1,             help='q value for lasso')
+parser.add_argument('--h',        type=int,    default=5,             help='h value for lasso')
+parser.add_argument('--l1',       type=float,  default=0.05,        help='lambda_1 value for lasso')
+parser.add_argument('--l2',       type=float,  default=0.05,        help='lambda_2 value for lasso')
+
+
 # Thompson args
 # parser.add_argument('--epsilon',  type=float,  default=.5,            help='Epsilon for Thompson')
 # parser.add_argument('--delta',    type=float,  default=.5,            help='Delta for Thompson')
 # parser.add_argument('--R',        type=float,  default=1.,            help='R for Thompson')
-parser.add_argument('--v',        type=float, default=.25,            help='v for Thompson')
+parser.add_argument('--v',        type=float,  default=.25,           help='v for Thompson')
+
 # MWU args
-parser.add_argument('--N',        type=int,    default=5,            help='How many experts to use for MWU')
+parser.add_argument('--N',        type=int,    default=5,             help='How many experts to use for MWU')
 parser.add_argument('--eta',      type=float,  default=0.95,          help='MWU exploration parameter')
 
 args = parser.parse_args()
@@ -53,7 +61,7 @@ def run():
 	elif args.algo == 'lin_ucb':
 		module = LinearUCB(args.K, args.d, len(data))
 	elif args.algo == 'lasso':
-		module = LASSO(args.K, len(data), args.d, q=1, h=5, l1=0.05, l2=0.05)
+		module = LASSO(args.K, len(data), args.d, q=args.q, h=args.h, l1=args.l1, l2=args.l2)
 	else:
 		raise NotImplementedError
 
