@@ -9,8 +9,8 @@ LOW = 0
 MEDIUM = 1
 HIGH = 2
 
-NUM_LIN_UCB_FEATURES = 53
-NUM_FEATURES = 53
+NUM_LIN_UCB_FEATURES = 62
+NUM_FEATURES = 62
 
 data_cols = ['PharmGKB Subject ID', 'Gender', 'Race', 'Ethnicity', 'Age', 'Height (cm)', 'Weight (kg)',
 'Indication for Warfarin Treatment', 'Comorbidities', 'Diabetes', 'Congestive Heart Failure and/or Cardiomyopathy',
@@ -172,8 +172,35 @@ def get_CYP2C9_features(CYP2C9):
 	else: features = [0, 0, 0, 0, 0, 0, 1]
 	return features
 
-def get_VKORC1_features(VKORC1):
-	if pd.isnull(VKORC1): features = [1, 0, 0, 0]
+def imputeVKORC1(patient):
+	race = patient['Race']
+	# if 'Black' not in race
+	rs2359612 = patient['VKORC1 genotype: 2255C>T (7566); chr16:31011297; rs2359612; A/G']
+	rs9934438 =	patient['VKORC1 genotype: 1173 C>T(6484); chr16:31012379; rs9934438; A/G']
+	rs8050894	= patient['VKORC1 genotype: 1542G>C (6853); chr16:31012010; rs8050894; C/G']
+	if 'Black' not in race and 'Unknown' not in race and not pd.isnull(rs2359612) and 'C/C' in rs2359612:
+		patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'] = 'G/G'
+	elif 'Black' not in race and 'Unknown' not in race and not pd.isnull(rs2359612) and 'T/T' in rs2359612:
+		patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'] = 'A/A'
+	elif 'Black' not in race and 'Unknown' not in race and not pd.isnull(rs2359612) and 'C/T' in rs2359612:
+		patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'] = 'A/G'
+	elif not pd.isnull(rs9934438) and 'C/C' in rs9934438:
+		patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'] = 'G/G'
+	elif not pd.isnull(rs9934438) and 'T/T' in rs9934438:
+		patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'] = 'A/A'
+	elif not pd.isnull(rs9934438) and 'C/T' in rs9934438:
+		patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'] = 'A/G'
+	elif 'Black' not in race and 'Unknown' not in race and not pd.isnull(rs8050894) and 'G/G' in rs8050894:
+		patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'] = 'G/G'
+	elif 'Black' not in race and 'Unknown' not in race and not pd.isnull(rs8050894) and 'C/C' in rs8050894:
+		patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'] = 'A/A'
+	elif 'Black' not in race and 'Unknown' not in race and not pd.isnull(rs8050894) and 'C/G' in rs8050894:
+		patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'] = 'A/G'
+	return patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T']
+
+def get_VKORC1_features(VKORC1, patient):
+	if pd.isnull(VKORC1): VKORC1 = imputeVKORC1(patient)
+	if pd.isnull(VKORC1):	features  = [1, 0, 0, 0]
 	elif 'A/A' in VKORC1: features = [0, 1, 0, 0]
 	elif 'A/G' in VKORC1: features = [0, 0, 1, 0]
 	else:	features = [0, 0, 0, 1]
@@ -215,12 +242,34 @@ def get_indication_for_treatment(indication):
 # 0 missing
 # 1 no
 # 2 yes
-def get_diabetes(diabetes):
+def get_binary_feature(feature):
 	features = [0, 0, 0]
-	if pd.isnull(diabetes): features[0] += 1
-	elif int(diabetes) == 0: features[1] += 1
-	elif int(diabetes) == 1: features[2] += 1
+	if pd.isnull(feature): features[0] += 1
+	elif int(feature) == 0: features[1] += 1
+	elif int(feature) == 1: features[2] += 1
+	else: print('uh oh! should not get here')
 	return features
+
+def get_diabetes(patient):
+	return get_binary_feature(patient['Diabetes'])
+
+def get_smoker(patient):
+	return get_binary_feature(patient['Current Smoker'])
+
+def get_simvastatin(patient):
+	return get_binary_feature(patient['Simvastatin (Zocor)'])
+def get_atorvastatin(patient):
+	return get_binary_feature(patient['Atorvastatin (Lipitor)'])
+def get_fluvastatin(patient):
+	return get_binary_feature(patient['Fluvastatin (Lescol)'])
+def get_lovastatin(patient):
+	return get_binary_feature(patient['Lovastatin (Mevacor)'])
+def get_pravastatin(patient):
+	return get_binary_feature(patient['Pravastatin (Pravachol)'])
+def get_rosuvastatin(patient):
+	return get_binary_feature(patient['Rosuvastatin (Crestor)'])
+def get_cerivastatin(patient):
+	return get_binary_feature(patient['Cerivastatin (Baycol)'])
 
 # Extract (linUCB) feature vector for a given patient
 def get_linUCB_features(patient):
@@ -241,10 +290,19 @@ def get_linUCB_features(patient):
 	features += get_height_features(height)
 	features += get_weight_features(weight)
 	features += get_CYP2C9_features(patient['Cyp2C9 genotypes'])
-	features += get_VKORC1_features(patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'])
+	features += get_VKORC1_features(patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'], patient)
 	features += get_comorbidities(patient['Comorbidities'])
 	features += get_indication_for_treatment(patient['Indication for Warfarin Treatment'])
-	features += get_diabetes(patient['Diabetes'])
+	features += get_diabetes(patient)
+	# features += get_smoker(patient)
+	features += get_simvastatin(patient)
+	features += get_atorvastatin(patient)
+	features += get_fluvastatin(patient)
+	# features += get_gender(patient)
+	# features += get_lovastatin(patient)
+	# features += get_pravastatin(patient)
+	#features += get_rosuvastatin(patient)
+	# features += get_cerivastatin(patient)
 	return np.reshape(preprocessing.normalize(np.reshape(features, (1, -1))), (NUM_LIN_UCB_FEATURES,)), skip
 
 ########################################

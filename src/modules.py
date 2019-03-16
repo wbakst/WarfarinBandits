@@ -93,7 +93,11 @@ class LinearUCB:
 
 	def update(self, X_t, a_t, r_t):
 		# Update A <-- A + x_t[a_t].dot(X_t[a_t].T)
+<<<<<<< Updated upstream
 		self.A[a_t] += np.outer(X_t, X_t)
+=======
+		self.A[a_t] += np.outer(X_t, X_t.T)
+>>>>>>> Stashed changes
 		# Update b <-- b + x_t[a] * r_t
 		self.b[a_t] += X_t*r_t[a_t]
 

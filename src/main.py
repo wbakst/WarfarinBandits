@@ -41,7 +41,6 @@ ALGORITHMS = ['mwu', 'thompson', 'lin_ucb', 'lasso']
 # Read in data
 data = pd.read_csv('data/warfarin.csv')
 data = data[data['Therapeutic Dose of Warfarin'].notnull()]
-data = data.sample(frac=1).reset_index(drop=True)
 
 # Runs the baselines
 def baseline():
