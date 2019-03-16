@@ -9,8 +9,8 @@ LOW = 0
 MEDIUM = 1
 HIGH = 2
 
-NUM_LIN_UCB_FEATURES = 40
-NUM_FEATURES = 40
+NUM_LIN_UCB_FEATURES = 53
+NUM_FEATURES = 53
 
 data_cols = ['PharmGKB Subject ID', 'Gender', 'Race', 'Ethnicity', 'Age', 'Height (cm)', 'Weight (kg)',
 'Indication for Warfarin Treatment', 'Comorbidities', 'Diabetes', 'Congestive Heart Failure and/or Cardiomyopathy',
@@ -112,9 +112,10 @@ def get_baseline_linear_features(patient):
 
 	# Extract race
 	race = patient['Race']
-	asian = 1 if race is 'Asian' else 0
-	black = 1 if race is 'Black' else 0
-	missing = 1 if race is 'Unknown' else 0
+
+	asian = 1 if 'Asian' in race else 0
+	black = 1 if 'Black' in race else 0
+	missing = 1 if 'Unknown' in race else 0
 	# Extract medication information
 	enzyme = get_enzyme_status(patient)
 	amiodorone_status = get_amiodorone_status(patient)
@@ -162,28 +163,76 @@ def get_weight_features(weight):
 	return [0, 0, 0, 0, 0, 0, 0, 1]
 
 def get_CYP2C9_features(CYP2C9):
-	if pd.isnull(CYP2C9): return [1, 0, 0, 0, 0, 0, 0]
-	if '*1/*2' in CYP2C9: return [0, 1, 0, 0, 0, 0, 0]
-	elif '*1/*3' in CYP2C9: return [0, 0, 1, 0, 0, 0, 0]
-	elif '*2/*2' in CYP2C9: return [0, 0, 0, 1, 0, 0, 0]
-	elif '*2/*3' in CYP2C9: return [0, 0, 0, 0, 1, 0, 0]
-	elif '*3/*3' in CYP2C9: return [0, 0, 0, 0, 0, 1, 0]
-	else: return [0, 0, 0, 0, 0, 0, 1]
+	if pd.isnull(CYP2C9):features = [1, 0, 0, 0, 0, 0, 0]
+	elif '*1/*2' in CYP2C9: features = [0, 1, 0, 0, 0, 0, 0]
+	elif '*1/*3' in CYP2C9: features = [0, 0, 1, 0, 0, 0, 0]
+	elif '*2/*2' in CYP2C9: features = [0, 0, 0, 1, 0, 0, 0]
+	elif '*2/*3' in CYP2C9: features = [0, 0, 0, 0, 1, 0, 0]
+	elif '*3/*3' in CYP2C9: features = [0, 0, 0, 0, 0, 1, 0]
+	else: features = [0, 0, 0, 0, 0, 0, 1]
+	return features
 
 def get_VKORC1_features(VKORC1):
-	if pd.isnull(VKORC1): return [1, 0, 0, 0]
-	if 'A/A' in VKORC1: return [0, 1, 0, 0]
-	elif 'A/G' in VKORC1: return [0, 0, 1, 0]
-	else:	return [0, 0, 0, 1]
+	if pd.isnull(VKORC1): features = [1, 0, 0, 0]
+	elif 'A/A' in VKORC1: features = [0, 1, 0, 0]
+	elif 'A/G' in VKORC1: features = [0, 0, 1, 0]
+	else:	features = [0, 0, 0, 1]
+	return features
+
+# 0 -- no disease
+# 1 -- has disease
+def get_comorbidities(comorbidities):
+	status = 0
+	if not pd.isnull(comorbidities):
+		comorbidities = comorbidities.lower()
+		if 'no comorbidities' in comorbidities or 'none' in comorbidities or 'no cancer' in comorbidities:
+			status = 0
+		else:
+			status = 1
+	return [status]
+
+# 9 features, 0 index is missing
+def get_indication_for_treatment(indication):
+	features = [0 for i in range(9)]
+	if pd.isnull(indication):
+		features[0] = 1
+	elif 'or' in indication:
+		indices = [int(i.strip()) for i in indication.split('or')]
+		for idx in indices:
+			features[idx] = 1
+	elif ';' in indication:
+		indices = [int(i.strip()) for i in indication.split(';')]
+		for idx in indices:
+			features[idx] = 1
+	elif ',' in indication:
+		indices = [int(i.strip()) for i in indication.split(',')]
+		for idx in indices:
+			features[idx] = 1
+	else:
+		features[int(indication)] = 1
+	return features
+
+# 0 missing
+# 1 no
+# 2 yes
+def get_diabetes(diabetes):
+	features = [0, 0, 0]
+	if pd.isnull(diabetes): features[0] += 1
+	elif int(diabetes) == 0: features[1] += 1
+	elif int(diabetes) == 1: features[2] += 1
+	return features
 
 # Extract (linUCB) feature vector for a given patient
 def get_linUCB_features(patient):
 
 	features = get_baseline_linear_features(patient)
+	skip = False
 
 	age = features[1]
 	height = features[2]
 	weight = features[3]
+	if pd.isnull(age) or pd.isnull(height) or pd.isnull(weight):
+		skip = True
 
 	# del features[1:7]
 	del features[1:4]
@@ -193,7 +242,10 @@ def get_linUCB_features(patient):
 	features += get_weight_features(weight)
 	features += get_CYP2C9_features(patient['Cyp2C9 genotypes'])
 	features += get_VKORC1_features(patient['VKORC1 genotype: -1639 G>A (3673); chr16:31015190; rs9923231; C/T'])
-	return np.reshape(preprocessing.normalize(np.reshape(features, (1, -1))), (NUM_LIN_UCB_FEATURES,))
+	features += get_comorbidities(patient['Comorbidities'])
+	features += get_indication_for_treatment(patient['Indication for Warfarin Treatment'])
+	features += get_diabetes(patient['Diabetes'])
+	return np.reshape(preprocessing.normalize(np.reshape(features, (1, -1))), (NUM_LIN_UCB_FEATURES,)), skip
 
 ########################################
 ###### INTERNAL HELPER FUNCTIONS #######
@@ -201,10 +253,11 @@ def get_linUCB_features(patient):
 
 def get_amiodorone_status(patient):
 	medications = patient['Medications']
-	if pd.isnull(medications): return 0
-	if 'amiodarone' in medications and 'not amiodarone' not in medications:
-		return 1
-	return 0
+	status = 0
+	if not pd.isnull(medications): medications = medications.lower()
+	if not pd.isnull(medications) and 'amiodarone' in medications and 'not amiodarone' not in medications and 'no amiodarone' not in medications:
+		status = 1
+	return status
 
 def get_enzyme_status(patient):
 	inducer_1 = patient['Rifampin or Rifampicin']

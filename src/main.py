@@ -1,4 +1,4 @@
-from modules import MWU, ThompsonSampler, LinearUCB
+from modules import MWU, ThompsonSampler, LinearUCB, LASSO
 from utils import *
 
 import sys
@@ -51,9 +51,9 @@ def run():
 	elif args.algo == 'thompson':
 		module = ThompsonSampler(args.K, args.d, args.epsilon, args.delta, args.R)
 	elif args.algo == 'lin_ucb':
-		module = LinearUCB(args.K, args.d, args.alpha)
+		module = LinearUCB(args.K, args.d, len(data))
 	elif args.algo == 'lasso':
-		raise NotImplementedError
+		module = LASSO(args.K, len(data), args.d, q=1, h=5, l1=0.05, l2=0.05)
 	else:
 		raise NotImplementedError
 
@@ -68,14 +68,18 @@ def run():
 	for t, patient in data.iterrows():
 		# Compute feature weights
 		try:
-			X_t = np.array(get_linUCB_features(patient))
+			# skip tells us the data points that were skipped by linear regression
+			# if we want to check accuracy on same data set as lin reg,
+			# uncomment the line below
+			X_t, skip = np.array(get_linUCB_features(patient))
+			# if skip: continue
 			num_patients += 1
 		except Exception as e:
 			print(e)
 			continue
 
 		# Pull an arm
-		a_t = module.pull(X_t)
+		a_t = module.pull(X_t, t)
 		preds[a_t] += 1
 
 		# Observe reward r_t in {-1,0}
@@ -103,7 +107,7 @@ def main():
 	elif args.algo in ALGORITHMS:
 		num_correct, num_patients, avg_incorrect, preds, true = run()
 		# Determine statistics and make plots
-		plt.plot(range(len(avg_incorrect)), avg_incorrect)
+		# plt.plot(range(len(avg_incorrect)), avg_incorrect)
 		# plt.show()
 		# plt.close()
 	else:

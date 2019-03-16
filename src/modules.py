@@ -7,25 +7,54 @@ from utils import *
 ##################################################
 
 class LASSO:
-	def __init__(self, K, d, q, h, l1, l2):
+	def __init__(self, K, n, d, q, h, l1, l2):
 		# Maintain list of actions and rewards for future reference
 		self.actions, self.rewards = [], []
 		# Parameters
 		self.K = K
+		# TODO: change this
+		self.n = 10
 		self.d = d
-		self.q = q
-		self.h = h
+		self.q = 3
+		self.h = 2 # What should h really be here?
 		self.l1 = l1
 		self.l2 = l2
 		# Variables
-		self.T = [set() for i in range(self.K)]
+		# Forced sample set
+		self.T = [self.construct_forced_sample_set(i+1) for i in range(self.K)]
+		print(self.T)
+		# All sample set
 		self.S = [set() for i in range(self.K)]
 		# Initialize Beta_T, Beta_S as d dimensional vectors
 		self.Beta_T = [np.zeros(d) for i in range(K)]
 		self.Beta_S = [np.zeros(d) for i in range(K)]
 
-	def pull(self, X_t):
-		pass
+	# Ratchet
+	def construct_forced_sample_set(self, i):
+		samples = []
+		j_vals = []
+		k = 1
+		val = 0
+		while val < self.q*i:
+			val = self.q*(i-1) + k
+			j_vals.append(val)
+			k += 1
+		for n_i in range(self.n):
+			for j in j_vals:
+				samples.append((2**n_i)*self.K*self.q+j)
+		return set(samples)
+
+
+	# Need to add t to all pulls
+	def pull(self, X_t, t):
+		# If t in any of forced sample sets, return action
+		for i in self.K:
+			if t in self.T[i]: return i
+		# If t is not in any of the forced sample sets:
+		#	We used the forced sample estimates Beta_T to find a subset of actions that maximize reward 1
+		# We then use the all sample estimates to choose the arm with the highest estimated reward
+		# within the subset of actions
+
 
 	def update(self, X_t, a_t, r_t):
 		pass
@@ -35,18 +64,20 @@ class LASSO:
 ##################################################
 
 class LinearUCB:
-	def __init__(self, K, d, alpha):
+	def __init__(self, K, d, n):
 		# Maintain list of actions and rewards for future reference
 		self.actions, self.rewards = [], []
 		# Parameters
 		self.K = K
 		self.d = d
-		self.alpha = alpha
+		self.n = n
+		# New alpha
+		self.alpha = 0.5*np.log(2*self.n*self.K/(0.1))
 		# Variables
 		self.A = np.array([np.identity(d) for i in range(K)])
 		self.b = np.array([np.zeros(d) for i in range(K)])
 
-	def pull(self, X_t):
+	def pull(self, X_t, t):
 		# Compute feature weights
 		theta = [np.linalg.inv(Ai).dot(bi) for Ai, bi in zip(self.A, self.b)]
 		# Iterate over each arm
@@ -86,7 +117,7 @@ class ThompsonSampler:
 		self.f = [np.zeros(d) for i in range(K)]
 		self.v = self.R * np.sqrt(24./self.epsilon * self.d * np.log(1./self.delta))
 
-	def pull(self, X_t):
+	def pull(self, X_t, t):
 		# Iterate over actions
 		b = np.zeros(self.K)
 		for a in range(self.K):
@@ -125,7 +156,7 @@ class MWU:
 		self.weights = [1.] * self.N
 		self.previous_expert_actions = [0] * len(self.experts)
 
-	def pull(self, X_t):
+	def pull(self, X_t, t):
 		# Pull an arm for each expert
 		weighted_actions = [0.] * self.K
 		for i in range(self.N):
