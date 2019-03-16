@@ -8,7 +8,7 @@ from utils import *
 ##################################################
 
 class LASSO:
-	def __init__(self, K, n, d, q, h, l1, l2):
+	def __init__(self, K, d, l2):
 		# Maintain list of actions and rewards for future reference
 		self.actions, self.rewards = [], []
 		# Parameters
@@ -61,11 +61,7 @@ class LASSO:
 		# 	return 2
 		for i in range(self.K):
 			clf = Lasso(self.l2_t, fit_intercept=False)
-			# print(len(self.S_features[i]))
-			# print(self.S_rewards[i])
-			if len(self.S_features[i]) > 0:
-				# print(np.array(self.S_features[i]).shape)
-				# print(np.array(self.S_rewards[i]).shape)
+			if len(self.S_features[i]) > 2:
 				clf.fit(self.S_features[i], self.S_rewards[i])
 				K_hat[i] = clf.predict(X_t.reshape(1,-1))
 			else:
@@ -176,7 +172,7 @@ class ThompsonSampler:
 ########## MULTIPLICATIVE WEIGHT UPDATE ##########
 ##################################################
 class MWU:
-	def __init__(self, K, d, N, eta):
+	def __init__(self, K, d, N, eta, l2, expert_type='thompson'):
 		# Maintain list of actions and rewards for future reference
 		self.actions, self.rewards = [], []
 		# Parameters
@@ -185,7 +181,12 @@ class MWU:
 		self.K = K
 		self.d = d
 		# Experts
-		self.experts = [ThompsonSampler(self.K, self.d) for i in range(self.N)]
+		if expert_type == 'thompson':
+			self.experts = [ThompsonSampler(self.K, self.d) for i in range(self.N)]
+		elif expert_type == 'lasso':
+			self.experts = [LASSO(self.K, self.d, l2) for i in range(self.N)]
+		else:
+			raise NotImplementedError
 		# Variables
 		self.weights = [1.] * self.N
 		self.previous_expert_actions = [0] * len(self.experts)
@@ -194,7 +195,7 @@ class MWU:
 		# Pull an arm for each expert
 		weighted_actions = [0.] * self.K
 		for i in range(self.N):
-			a = self.experts[i].pull(X_t, t)
+			a = self.experts[i].pull(X_t)
 			weighted_actions[a] += self.weights[i] / np.sum(self.weights)
 			self.previous_expert_actions[i] = a
 		# Determine majority vote action
