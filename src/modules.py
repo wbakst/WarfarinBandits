@@ -93,7 +93,7 @@ class LinearUCB:
 
 	def update(self, X_t, a_t, r_t):
 		# Update A <-- A + x_t[a_t].dot(X_t[a_t].T)
-		self.A[a_t] += X_t.dot(X_t.T)
+		self.A[a_t] += np.outer(X_t, X_t)
 		# Update b <-- b + x_t[a] * r_t
 		self.b[a_t] += X_t*r_t[a_t]
 
@@ -101,21 +101,22 @@ class LinearUCB:
 ############### THOMPSON SAMPLING ################
 ##################################################
 class ThompsonSampler:
-	def __init__(self, K, d, epsilon=0.5, delta=0.5, R=1):
+	def __init__(self, K, d, v=.25):
 		# Maintain list of actions and rewards for future reference
 		self.actions, self.rewards = [], []
 		# Parameters
 		self.K = K
 		self.d = d
 		# Hyperparameters
-		self.epsilon = epsilon
-		self.delta = delta
-		self.R = R
+		# self.epsilon = epsilon
+		# self.delta = delta
+		# self.R = R
 		# Variables
 		self.B = [np.identity(d) for i in range(K)]
 		self.mu_hat = [np.zeros(d) for i in range(K)]
 		self.f = [np.zeros(d) for i in range(K)]
-		self.v = self.R * np.sqrt(24./self.epsilon * self.d * np.log(1./self.delta))
+		# self.v = self.R * np.sqrt(24./self.epsilon * self.d * np.log(1./self.delta))
+		self.v = v
 
 	def pull(self, X_t, t):
 		# Iterate over actions
@@ -134,7 +135,7 @@ class ThompsonSampler:
 		# Update rewards
 		self.rewards.append(r_t[a_t])
 		# Update parameters based on choice and reward
-		self.B[a_t] = self.B[a_t] + X_t.dot(X_t.T)
+		self.B[a_t] = self.B[a_t] + np.outer(X_t, X_t)
 		self.f[a_t] = self.f[a_t] + X_t * r_t[a_t]
 		self.mu_hat[a_t] = np.linalg.inv(self.B[a_t]).dot(self.f[a_t])
 
@@ -160,7 +161,7 @@ class MWU:
 		# Pull an arm for each expert
 		weighted_actions = [0.] * self.K
 		for i in range(self.N):
-			a = self.experts[i].pull(X_t)
+			a = self.experts[i].pull(X_t, t)
 			weighted_actions[a] += self.weights[i] / np.sum(self.weights)
 			self.previous_expert_actions[i] = a
 		# Determine majority vote action

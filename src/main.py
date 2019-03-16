@@ -16,12 +16,12 @@ parser.add_argument('--d',        type=int,    default=NUM_FEATURES,  help='Numb
 parser.add_argument('--alpha',    type=int,    default=7,             help='Alpha for LinearUCB')
 
 # Thompson args
-parser.add_argument('--epsilon',  type=float,  default=.5,            help='Epsilon for Thompson')
-parser.add_argument('--delta',    type=float,  default=.5,            help='Delta for Thompson')
-parser.add_argument('--R',        type=float,  default=1.,            help='R for Thompson')
-
+# parser.add_argument('--epsilon',  type=float,  default=.5,            help='Epsilon for Thompson')
+# parser.add_argument('--delta',    type=float,  default=.5,            help='Delta for Thompson')
+# parser.add_argument('--R',        type=float,  default=1.,            help='R for Thompson')
+parser.add_argument('--v',        type=float, default=.25,            help='v for Thompson')
 # MWU args
-parser.add_argument('--N',        type=int,    default=100,            help='How many experts to use for MWU')
+parser.add_argument('--N',        type=int,    default=5,            help='How many experts to use for MWU')
 parser.add_argument('--eta',      type=float,  default=0.95,          help='MWU exploration parameter')
 
 args = parser.parse_args()
@@ -49,7 +49,7 @@ def run():
 	if args.algo == 'mwu':
 		module = MWU(args.K, args.d, args.N, args.eta)
 	elif args.algo == 'thompson':
-		module = ThompsonSampler(args.K, args.d, args.epsilon, args.delta, args.R)
+		module = ThompsonSampler(args.K, args.d, args.v)
 	elif args.algo == 'lin_ucb':
 		module = LinearUCB(args.K, args.d, len(data))
 	elif args.algo == 'lasso':
