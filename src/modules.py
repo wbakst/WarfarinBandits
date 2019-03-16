@@ -1,4 +1,5 @@
 from scipy.stats import multivariate_normal
+from sklearn.linear_model import Lasso
 import numpy as np
 from utils import *
 
@@ -13,18 +14,22 @@ class LASSO:
 		# Parameters
 		self.K = K
 		# TODO: change this
-		self.n = 10
+		# self.n = 10
 		self.d = d
-		self.q = 3
-		self.h = 2 # What should h really be here?
-		self.l1 = l1
-		self.l2 = l2
-		# Variables
+		# self.q = 3
+		# self.h = 2 # What should h really be here?
+		# self.l1 = l1
+		self.l2_0 = l2
+		self.l2_t = self.l2_0
+
+		self.t = 0
+
 		# Forced sample set
-		self.T = [self.construct_forced_sample_set(i+1) for i in range(self.K)]
-		print(self.T)
+		# self.T = [self.construct_forced_sample_set(i+1) for i in range(self.K)]
+
 		# All sample set
-		self.S = [set() for i in range(self.K)]
+		self.S_features = [[] for i in range(self.K)]
+		self.S_rewards = [[] for i in range(self.K)]
 		# Initialize Beta_T, Beta_S as d dimensional vectors
 		self.Beta_T = [np.zeros(d) for i in range(K)]
 		self.Beta_S = [np.zeros(d) for i in range(K)]
@@ -46,10 +51,29 @@ class LASSO:
 
 
 	# Need to add t to all pulls
-	def pull(self, X_t, t):
+	def pull(self, X_t):
 		# If t in any of forced sample sets, return action
-		for i in self.K:
-			if t in self.T[i]: return i
+		# for i in self.K:
+		# 	if t in self.T[i]: return i
+
+		K_hat = np.zeros(self.K)
+		# if self.t < 100 and self.t % 10 == 0:
+		# 	return 2
+		for i in range(self.K):
+			clf = Lasso(self.l2_t, fit_intercept=False)
+			# print(len(self.S_features[i]))
+			# print(self.S_rewards[i])
+			if len(self.S_features[i]) > 0:
+				# print(np.array(self.S_features[i]).shape)
+				# print(np.array(self.S_rewards[i]).shape)
+				clf.fit(self.S_features[i], self.S_rewards[i])
+				K_hat[i] = clf.predict(X_t.reshape(1,-1))
+			else:
+				K_hat[i] = np.random.uniform()
+
+		a_t = np.argmax(K_hat)
+		return a_t
+
 		# If t is not in any of the forced sample sets:
 		#	We used the forced sample estimates Beta_T to find a subset of actions that maximize reward 1
 		# We then use the all sample estimates to choose the arm with the highest estimated reward
@@ -57,7 +81,12 @@ class LASSO:
 
 
 	def update(self, X_t, a_t, r_t):
-		pass
+		self.S_features[a_t].append(X_t.tolist())
+		self.S_rewards[a_t].append(r_t[a_t])
+
+		self.t += 1
+		self.l2_t = self.l2_0 * np.sqrt((np.log(self.t) + np.log(self.d)) / self.t)
+		# play arm pi_t, observe Y(t) = X_t^T beta_pi_t + epsilon_i_t
 
 ##################################################
 ################### LINEAR UCB ###################
@@ -77,7 +106,7 @@ class LinearUCB:
 		self.A = np.array([np.identity(d) for i in range(K)])
 		self.b = np.array([np.zeros(d) for i in range(K)])
 
-	def pull(self, X_t, t):
+	def pull(self, X_t):
 		# Compute feature weights
 		theta = [np.linalg.inv(Ai).dot(bi) for Ai, bi in zip(self.A, self.b)]
 		# Iterate over each arm
@@ -118,7 +147,7 @@ class ThompsonSampler:
 		# self.v = self.R * np.sqrt(24./self.epsilon * self.d * np.log(1./self.delta))
 		self.v = v
 
-	def pull(self, X_t, t):
+	def pull(self, X_t):
 		# Iterate over actions
 		b = np.zeros(self.K)
 		for a in range(self.K):
@@ -157,7 +186,7 @@ class MWU:
 		self.weights = [1.] * self.N
 		self.previous_expert_actions = [0] * len(self.experts)
 
-	def pull(self, X_t, t):
+	def pull(self, X_t):
 		# Pull an arm for each expert
 		weighted_actions = [0.] * self.K
 		for i in range(self.N):

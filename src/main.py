@@ -86,7 +86,7 @@ def run():
 			continue
 
 		# Pull an arm
-		a_t = module.pull(X_t, t)
+		a_t = module.pull(X_t)
 		preds[a_t] += 1
 
 		# Observe reward r_t in {-1,0}
