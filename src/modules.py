@@ -8,24 +8,29 @@ from utils import *
 ##################################################
 
 class LASSO:
-	def __init__(self, K, d, l2):
+	def __init__(self, K, d, h, q, n, l1, l2):
 		# Maintain list of actions and rewards for future reference
 		self.actions, self.rewards = [], []
 		# Parameters
 		self.K = K
 		# TODO: change this
-		# self.n = 10
 		self.d = d
-		# self.q = 3
-		# self.h = 2 # What should h really be here?
-		# self.l1 = l1
+		self.h = h
+		self.q = q
+		self.n = n
+		self.h = 1. # What should h really be here?
+		self.l1 = l1
 		self.l2_0 = l2
 		self.l2_t = self.l2_0
 
 		self.t = 0
 
 		# Forced sample set
-		# self.T = [self.construct_forced_sample_set(i+1) for i in range(self.K)]
+		self.T = [self.construct_forced_sample_set(i+1) for i in range(self.K)]
+		# print(self.T)
+		# Forced sample features and rewards
+		self.T_features = [[] for i in range(self.K)]
+		self.T_rewards = [[] for i in range(self.K)]
 
 		# All sample set
 		self.S_features = [[] for i in range(self.K)]
@@ -53,21 +58,33 @@ class LASSO:
 	# Need to add t to all pulls
 	def pull(self, X_t):
 		# If t in any of forced sample sets, return action
-		# for i in self.K:
-		# 	if t in self.T[i]: return i
+		for i in range(self.K):
+			if self.t in self.T[i]:
+				return i
 
 		K_hat = np.zeros(self.K)
-		# if self.t < 100 and self.t % 10 == 0:
-		# 	return 2
-		for i in range(self.K):
-			clf = Lasso(self.l2_t, fit_intercept=False)
-			if len(self.S_features[i]) > 2:
-				clf.fit(self.S_features[i], self.S_rewards[i])
-				K_hat[i] = clf.predict(X_t.reshape(1,-1))
-			else:
-				K_hat[i] = np.random.uniform()
+		# for i in range(self.K):
+		# 	if len(self.T_features[i]) > 0:
+		# 		clf = Lasso(self.l1/2., fit_intercept=False)
+		# 		clf.fit(self.T_features[i], self.T_rewards[i])
+		# 		K_hat[i] = clf.predict(X_t.reshape(1,-1))
+		# 	else:
+		# 		K_hat[i] = np.random.uniform()
+		# print('K hat', K_hat)
+		K = np.zeros(self.K)
 
-		a_t = np.argmax(K_hat)
+		for i in range(self.K):
+			# if K_hat[i] < np.max(K_hat) - self.h/2.:
+			# 	continue
+
+			if len(self.S_features[i]) > 0:
+				clf = Lasso(self.l2_t/2., fit_intercept=False)
+				clf.fit(self.S_features[i], self.S_rewards[i])
+				K[i] = clf.predict(X_t.reshape(1,-1))
+			else:
+				K[i] = np.random.uniform()
+		# print('K    ', K)
+		a_t = np.argmax(K)
 		return a_t
 
 		# If t is not in any of the forced sample sets:
@@ -77,6 +94,10 @@ class LASSO:
 
 
 	def update(self, X_t, a_t, r_t):
+		if self.t in self.T[a_t]:
+			self.T_features[a_t].append(X_t.tolist())
+			self.T_rewards[a_t].append(r_t[a_t])
+
 		self.S_features[a_t].append(X_t.tolist())
 		self.S_rewards[a_t].append(r_t[a_t])
 

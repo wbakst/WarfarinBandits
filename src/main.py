@@ -16,8 +16,9 @@ parser.add_argument('--d',            type=int,    default=NUM_FEATURES,  help='
 parser.add_argument('--alpha',        type=int,    default=7,             help='Alpha for LinearUCB')
 
 # LASSO args
-parser.add_argument('--q',            type=int,    default=1,             help='q value for lasso')
-parser.add_argument('--h',            type=int,    default=5,             help='h value for lasso')
+parser.add_argument('--q',            type=int,    default=3,             help='q value for lasso')
+parser.add_argument('--h',            type=float,  default=1.,            help='h value for lasso')
+parser.add_argument('--n',            type=int,    default=5,             help='n value for lasso')
 parser.add_argument('--l1',           type=float,  default=0.05,          help='lambda_1 value for lasso')
 parser.add_argument('--l2',           type=float,  default=0.05,          help='lambda_2 value for lasso')
 
@@ -28,7 +29,7 @@ parser.add_argument('--l2',           type=float,  default=0.05,          help='
 parser.add_argument('--v',            type=float,  default=.25,           help='v for Thompson')
 
 # MWU args
-parser.add_argument('--N',            type=int,    default=10,             help='How many experts to use for MWU')
+parser.add_argument('--N',            type=int,    default=10,            help='How many experts to use for MWU')
 parser.add_argument('--eta',          type=float,  default=0.95,          help='MWU exploration parameter')
 parser.add_argument('--expert_type',  type=str,    default='thompson',    help='Which module to use as an expert for MWU')
 
@@ -63,7 +64,7 @@ def run():
 		module = LinearUCB(args.K, args.d, len(data))
 	elif args.algo == 'lasso':
 		# module = LASSO(args.K, len(data), args.d, q=args.q, h=args.h, l1=args.l1, l2=args.l2)
-		module = LASSO(args.K, args.d, l2=args.l2)
+		module = LASSO(args.K, args.d, args.h, args.q, args.n, args.l1, args.l2)
 	else:
 		raise NotImplementedError
 
@@ -125,8 +126,8 @@ def main():
 
 	# Print out accuracy of algorithm
 	print('Accuracy: {}'.format(num_correct / float(num_patients)))
-	# print('Predictions', preds)
-	# print('True', true)
+	print('Predictions', preds)
+	print('True', true)
 
 if __name__ == '__main__':
 	main()
