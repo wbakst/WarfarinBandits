@@ -1,5 +1,6 @@
 from modules import MWU, ThompsonSampler, LinearUCB, LASSO
 from utils import *
+from utils import get_confusion_matrix
 
 import sys
 import argparse
@@ -55,6 +56,8 @@ def baseline():
 
 # Runs a module from modules.py
 def run():
+	if args.algo in BASELINES:
+		return baseline()
 	if args.algo == 'mwu':
 		module = MWU(args.K, args.d, args.N, args.eta, args.l2, args.expert_type)
 	elif args.algo == 'thompson':
@@ -72,8 +75,10 @@ def run():
 	num_correct = 0
 	num_patients = 0
 	avg_incorrect = []
-	preds = [0, 0, 0]
-	true = [0, 0, 0]
+	preds = []
+	true = []
+	num_incorrect = 0
+	regret = []
 
 	# Iterate over patients
 	for t, patient in data.iterrows():
@@ -84,50 +89,41 @@ def run():
 			# uncomment the line below
 			X_t, skip = np.array(get_features(patient, (args.algo == 'lin_ucb')))
 			# if skip: continue
-			num_patients += 1
 		except Exception as e:
 			print(e)
 			continue
 
+		num_patients += 1
 		# Pull an arm
 		a_t = module.pull(X_t)
-		preds[a_t] += 1
+		preds.append(a_t)
 
 		# Observe reward r_t in {-1,0}
 		true_action = get_true_action(patient)
 		r_t = np.zeros(args.K)
 		r_t[true_action] = 1
-		true[true_action] += 1
+		true.append(true_action)
 
 		# Update the model
 		module.update(X_t, a_t, r_t)
 
 		# Update statistics variables
-		num_correct += 1 if true_action == a_t else 0
-		avg_incorrect.append(((t+1-num_correct) / (t+1)))
+		if true_action == a_t: num_correct += 1
+		else:	num_incorrect += 1
+
+		regret.append(num_incorrect)
+		avg_incorrect.append(num_incorrect / num_patients)
 
 	# Return statisics variables
-	return num_correct, num_patients, avg_incorrect, preds, true
+	return num_correct, num_patients, avg_incorrect, preds, true, regret
 
 def main():
-	# If not MWU, then we can simply determine the
-	# model and run it with the same skeleton
 	num_correct, num_patients, avg_incorrect = 0, 0, 0
-	if args.algo in BASELINES:
-		num_correct, num_patients = baseline()
-	elif args.algo in ALGORITHMS:
-		num_correct, num_patients, avg_incorrect, preds, true = run()
-		# Determine statistics and make plots
-		# plt.plot(range(len(avg_incorrect)), avg_incorrect)
-		# plt.show()
-		# plt.close()
-	else:
-		raise NotImplementedError
-
-	# Print out accuracy of algorithm
+	num_correct, num_patients, avg_incorrect, preds, true, regret = run()
 	print('Accuracy: {}'.format(num_correct / float(num_patients)))
-	print('Predictions', preds)
-	print('True', true)
+	plot_stats(avg_incorrect, 'average incorrect')
+	plot_stats(regret, 'regret')
+
 
 if __name__ == '__main__':
 	main()

@@ -4,6 +4,8 @@
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
+from sklearn import metrics
+from matplotlib import pyplot as plt
 
 LOW = 0
 MEDIUM = 1
@@ -68,6 +70,12 @@ baseline_features = [
   'Amiodarone'
 ]
 
+# simple plotting function
+def plot_stats(stat, title):
+	plt.plot(range(len(stat)), stat)
+	plt.title(title)
+	plt.xlabel('Timestep')
+	plt.show()
 
  # Returns which dosage type (low, medium, high)
 def get_dosage_bucket(dosage):
@@ -309,6 +317,22 @@ def get_features(patient, ucb=False):
 		return np.reshape(preprocessing.normalize(np.reshape(features, (1, -1))), (NUM_FEATURES,)), skip
 
 ########################################
+######## Metrics ########
+########################################
+def get_confusion_matrix(predictions, true, K, data, percentage):
+	cm = metrics.confusion_matrix(true, predictions).astype(float)
+	if percentage:
+		num_low = sum([1 for dose in true if dose == 0])
+		num_med =  sum([1 for dose in true if dose == 1])
+		num_high = sum([1 for dose in true if dose == 2])
+		cm[0] = cm[0] / num_low
+		cm[1] = cm[1] / num_med
+		cm[2] = cm[2] / num_high
+		cm = cm * 100
+
+	return cm
+
+########################################
 ###### INTERNAL HELPER FUNCTIONS #######
 ########################################
 
@@ -334,12 +358,26 @@ def get_enzyme_status(patient):
 
 def single_action_baseline(data):
 	true_dosages = data.loc[:,'Therapeutic Dose of Warfarin'].values.tolist()
-	num_correct = sum([1. for i in true_dosages if i >= 21 and i <= 49])  # 3-5 mg/day
-	return num_correct, len(true_dosages)
+	num_incorrect, num_correct = 0., 0
+	num_patients = 0
+	regret = []
+	avg_incorrect = []
+
+	for true_dosage in true_dosages:
+		num_patients += 1
+		if true_dosage >= 21 and true_dosage <=49: num_correct += 1
+		else: num_incorrect += 1
+		avg_incorrect.append(num_incorrect / num_patients)
+		regret.append(num_incorrect)
+
+	return num_correct, len(true_dosages), avg_incorrect, [MEDIUM for i in range(len(true_dosages))], true_dosages, regret
 
 def linear_regression_baseline(data):
-	num_correct, num_patients = 0, 0
-	num_discarded = 0
+	num_correct, num_patients, num_incorrect, num_discarded = 0, 0, 0, 0
+	preds = []
+	true = []
+	regret = []
+	avg_incorrect = []
 	for index, patient in data.iterrows():
 		f = get_baseline_linear_features(patient)
 		if True in np.isnan(f):
@@ -350,7 +388,14 @@ def linear_regression_baseline(data):
 		for index, item in enumerate(f):
 			pred += item * baseline_feature_weights[baseline_features[index]]
 		pred = pred * pred
-		if correct_predicted_dosage(get_true_dosage(patient), pred):
+		preds.append(get_dosage_bucket(pred))
+		true_dosage = get_true_dosage(patient)
+		true.append(get_dosage_bucket(true_dosage))
+		if correct_predicted_dosage(true_dosage, pred):
 			num_correct += 1
-	# print('Num discarded', num_discarded)
-	return num_correct, float(num_patients)
+		else:
+			num_incorrect += 1
+		regret.append(num_incorrect)
+		avg_incorrect.append(float(num_incorrect) / num_patients)
+
+	return num_correct, float(num_patients), avg_incorrect, preds, true, regret
