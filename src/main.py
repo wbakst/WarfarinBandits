@@ -32,13 +32,12 @@ parser.add_argument('--v',            type=float,  default=.25,           help='
 # MWU args
 parser.add_argument('--N',            type=int,    default=10,            help='How many experts to use for MWU')
 parser.add_argument('--eta',          type=float,  default=0.95,          help='MWU exploration parameter')
-parser.add_argument('--expert_type',  type=str,    default='thompson',    help='Which module to use as an expert for MWU')
 
 args = parser.parse_args()
 
 # Valid algorithms we have implements
 BASELINES = ['single', 'lin_reg']
-ALGORITHMS = ['mwu', 'thompson', 'lin_ucb', 'lasso']
+ALGORITHMS = ['mwu_thompson', 'mwu_lasso', 'thompson', 'lin_ucb', 'lasso']
 
 # Read in data
 data = pd.read_csv('data/warfarin.csv')
@@ -58,8 +57,10 @@ def baseline():
 def run():
 	if args.algo in BASELINES:
 		return baseline()
-	if args.algo == 'mwu':
-		module = MWU(args.K, args.d, args.N, args.eta, args.l2, args.expert_type)
+	if args.algo == 'mwu_thompson':
+		module = MWU(args.K, args.d, args.N, args.eta, args.l2, 'thompson')
+	elif args.algo == 'mwu_lasso':
+		module = MWU(args.K, args.d, args.N, args.eta, args.l2, 'lasso')
 	elif args.algo == 'thompson':
 		module = ThompsonSampler(args.K, args.d, args.v)
 	elif args.algo == 'lin_ucb':
@@ -100,8 +101,7 @@ def run():
 
 		# Observe reward r_t in {-1,0}
 		true_action = get_true_action(patient)
-		r_t = np.zeros(args.K)
-		r_t[true_action] = 1
+		r_t = get_reward(true_action, args.K, args.algo)
 		true.append(true_action)
 
 		# Update the model

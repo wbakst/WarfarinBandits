@@ -86,6 +86,14 @@ def get_dosage_bucket(dosage):
 	else:
 		return HIGH
 
+# Returns the proper reward for a defined algorithm
+def get_reward(true_action, K, algo):
+	r_t = np.zeros(K)
+	r_t[true_action] = 1
+	if algo == 'lasso' or algo == 'mwu_lasso':
+		r_t -= 1
+	return r_t
+
 # Determines if predicted dosage matches the true dosage from the data
 def correct_predicted_dosage(true_dosage, predicted_dosage):
 	return get_dosage_bucket(true_dosage) == get_dosage_bucket(predicted_dosage)

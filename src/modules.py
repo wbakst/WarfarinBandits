@@ -94,8 +94,6 @@ class LASSO:
 
 
 	def update(self, X_t, a_t, r_t):
-		r_t -= 1 # use 0 and -1 for lasso rewards
-
 		if self.t in self.T[a_t]:
 			self.T_features[a_t].append(X_t.tolist())
 			self.T_rewards[a_t].append(r_t[a_t])

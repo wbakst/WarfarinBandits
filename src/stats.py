@@ -1,24 +1,20 @@
+import numpy as np
+
 def get_statistics(filename):
 	with open(filename) as file:
-		high, low, total, count = float('-inft'), float('inf'), 0, 0
-		for line in file:
-			accuracy += float(line.strip())
-			if accuracy > high: high = accuracy
-			if accuracy < low: low = accuracy
-			total += accuracy
-			count += 1
-		return total/count, high, low
+		accuracies = [float(line.strip().split()[1]) for line in file]
+		return np.mean(accuracies), np.std(accuracies)
 
-FILES = [('LinUCB', 'data/lin_ucb_stats.txt'),
-		 ('Thompson', 'data/thompson_stats.txt'),
-		 ('LASSO', 'data/lasso_stats.txt'),
-		 ('MWU (Thompson)', 'data/mwu_thompson_stats.txt'),
-		 ('MWU (LASSO)', 'data/mwu_lasso_stats.txt')]
+FILES = [('LinUCB', 'stats/lin_ucb_stats.txt'),
+		 ('Thompson', 'stats/thompson_stats.txt'),
+		 ('LASSO', 'stats/lasso_stats.txt'),
+		 ('MWU (Thompson)', 'stats/mwu_thompson_stats.txt'),
+		 ('MWU (LASSO)', 'stats/mwu_lasso_stats.txt')]
 
 def main():
 	for algo, filename in FILES:
-		mean, high, low = get_statistics(filename)
-		print('{} Accuracy: {} (+/-) {}'.format(algo, mean, min(high-mean, mean-low)))
+		mean, std = get_statistics(filename)
+		print('{} Accuracy: {} (+/-) {}'.format(algo, mean, std))
 
 if __name__ == '__main__':
 	main()
