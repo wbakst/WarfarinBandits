@@ -8,7 +8,7 @@ from utils import *
 ##################################################
 
 class LASSO:
-	def __init__(self, K, d, h, q, n, l1, l2):
+	def __init__(self, K, d, h, q, n, l1, l2, offset=0):
 		# Maintain list of actions and rewards for future reference
 		self.actions, self.rewards = [], []
 		# Parameters
@@ -22,6 +22,8 @@ class LASSO:
 		self.l1 = l1
 		self.l2_0 = l2
 		self.l2_t = self.l2_0
+
+		self.offset = offset
 
 		self.t = 0
 
@@ -52,6 +54,7 @@ class LASSO:
 		for n_i in range(self.n):
 			for j in j_vals:
 				samples.append((2**n_i)*self.K*self.q+j)
+		samples = [x+self.offset for x in samples]
 		return set(samples)
 
 
@@ -205,7 +208,7 @@ class MWU:
 		if expert_type == 'thompson':
 			self.experts = [ThompsonSampler(self.K, self.d) for i in range(self.N)]
 		elif expert_type == 'lasso':
-			self.experts = [LASSO(self.K, self.d, h, q, n, l1, l2) for i in range(self.N)]
+			self.experts = [LASSO(self.K, self.d, h, q, n, l1, l2, offset=i) for i in range(self.N)]
 		else:
 			raise NotImplementedError
 		# Variables
