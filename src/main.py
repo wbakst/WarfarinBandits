@@ -58,9 +58,9 @@ def run():
 	if args.algo in BASELINES:
 		return baseline()
 	if args.algo == 'mwu_thompson':
-		module = MWU(args.K, args.d, args.N, args.eta, args.l2, 'thompson')
+		module = MWU(args.K, args.d, args.N, args.eta, args.h, args.q, args.n, args.l1, args.l2, 'thompson')
 	elif args.algo == 'mwu_lasso':
-		module = MWU(args.K, args.d, args.N, args.eta, args.l2, 'lasso')
+		module = MWU(args.K, args.d, args.N, args.eta, args.h, args.q, args.n, args.l1, args.l2, 'lasso')
 	elif args.algo == 'thompson':
 		module = ThompsonSampler(args.K, args.d, args.v)
 	elif args.algo == 'lin_ucb':
@@ -121,8 +121,8 @@ def main():
 	num_correct, num_patients, avg_incorrect = 0, 0, 0
 	num_correct, num_patients, avg_incorrect, preds, true, regret = run()
 	print('Accuracy: {}'.format(num_correct / float(num_patients)))
-	plot_stats(avg_incorrect, 'average incorrect')
-	plot_stats(regret, 'regret')
+	# plot_stats(avg_incorrect, 'average incorrect')
+	# plot_stats(regret, 'regret')
 
 
 if __name__ == '__main__':

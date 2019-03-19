@@ -193,7 +193,7 @@ class ThompsonSampler:
 ########## MULTIPLICATIVE WEIGHT UPDATE ##########
 ##################################################
 class MWU:
-	def __init__(self, K, d, N, eta, l2, expert_type='thompson'):
+	def __init__(self, K, d, N, eta, h, q, n, l1, l2, expert_type='thompson'):
 		# Maintain list of actions and rewards for future reference
 		self.actions, self.rewards = [], []
 		# Parameters
@@ -205,7 +205,7 @@ class MWU:
 		if expert_type == 'thompson':
 			self.experts = [ThompsonSampler(self.K, self.d) for i in range(self.N)]
 		elif expert_type == 'lasso':
-			self.experts = [LASSO(self.K, self.d, l2) for i in range(self.N)]
+			self.experts = [LASSO(self.K, self.d, h, q, n, l1, l2) for i in range(self.N)]
 		else:
 			raise NotImplementedError
 		# Variables
