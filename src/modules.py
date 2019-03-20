@@ -208,7 +208,7 @@ class MWU:
 		if expert_type == 'thompson':
 			self.experts = [ThompsonSampler(self.K, self.d) for i in range(self.N)]
 		elif expert_type == 'lasso':
-			self.experts = [LASSO(self.K, self.d, h, q, n, l1, l2, offset=i) for i in range(self.N)]
+			self.experts = [LASSO(self.K, self.d, h, q, n, l1, l2, offset=0) for i in range(self.N)]
 		else:
 			raise NotImplementedError
 		# Variables
